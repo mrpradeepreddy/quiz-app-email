@@ -47,7 +47,7 @@ async def login(user_credentials: UserLogin, db: Session = Depends(get_db)):
         "username": user.username
     }
 
-@router.post("/register/admin", response_model=UserSchema)
+@router.post("/register", response_model=UserSchema,status_code=status.HTTP_201_CREATED)
 async def register(user_data: UserCreate,background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     """Register a new user (admin only)."""
     # Check if username already exists

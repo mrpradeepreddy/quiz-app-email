@@ -19,46 +19,6 @@ from auth.jwt import get_current_user, require_admin, require_student
 
 router = APIRouter(prefix="/questions", tags=["Questions"])
 
-@router.post("/", response_model=QuestionSchema)
-async def create_question(
-    question_data: QuestionCreate,
-    current_user: User = Depends(require_admin),
-    db: Session = Depends(get_db)
-):
-    """Create a new question (admin only)."""
-    # Validate that at least one choice is correct
-    correct_choices = [choice for choice in question_data.choices if choice.iss_correct]
-    if not correct_choices:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="At least one choice must be correct"
-        )
-    
-    # Create question
-    db_question = Question(
-        question_text=question_data.question_text,
-        topic=question_data.topic,
-        level=question_data.level,
-        created_by_user_id=current_user.id
-    )
-    
-    db.add(db_question)
-    db.commit()
-    db.refresh(db_question)
-    
-    # Create choices
-    for choice_data in question_data.choices:
-        db_choice = Choice(
-            choice_text=choice_data.choice_text,
-            iss_correct=choice_data.iss_correct,
-            question_id=db_question.id
-        )
-        db.add(db_choice)
-    
-    db.commit()
-    db.refresh(db_question)
-    return db_question
-
 @router.post("/bulk", response_model=List[QuestionSchema])
 async def create_questions_bulk(
     questions_data: QuestionBulkCreate,

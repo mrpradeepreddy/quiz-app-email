@@ -20,7 +20,7 @@ from schemas.invite import InviteCreate
 
 router = APIRouter(prefix="/assessments", tags=["Assessments"])
 
-@router.post("/", response_model=AssessmentSchema)
+@router.post("/create", response_model=AssessmentSchema)
 def create_assessment(
     assessment_data: AssessmentCreate,
     current_user: User = Depends(require_admin),
@@ -58,7 +58,7 @@ def create_assessment(
     db.commit()
     return db_assessment
 
-@router.get("/", response_model=List[AssessmentSchema])
+@router.get("/get-assessment", response_model=List[AssessmentSchema])
 async def get_assessments(
     skip: int = 0,
     limit: int = 100,
