@@ -12,7 +12,8 @@ from schemas.assessment import (
     AssessmentCreate, 
     AssessmentUpdate, 
     Assessment as AssessmentSchema,
-    AssessmentWithQuestions
+    AssessmentWithQuestions,
+    AssessmentForDashboard
 )
 from models.user_assessment import UserAssessment, AssessmentStatus
 from auth.jwt import get_current_user, require_admin, require_student
@@ -20,7 +21,7 @@ from schemas.invite import InviteCreate
 
 router = APIRouter(prefix="/assessments", tags=["Assessments"])
 
-@router.post("/create", response_model=AssessmentSchema)
+@router.post("/create", response_model=AssessmentSchema,status_code=status.HTTP_201_CREATED)
 def create_assessment(
     assessment_data: AssessmentCreate,
     current_user: User = Depends(require_admin),
@@ -44,7 +45,7 @@ def create_assessment(
     )
     
     db.add(db_assessment)
-    db.commit()
+    db.flush()
     db.refresh(db_assessment)
     
     # Add questions to assessment
@@ -58,7 +59,7 @@ def create_assessment(
     db.commit()
     return db_assessment
 
-@router.get("/get-assessment", response_model=List[AssessmentSchema])
+@router.get("/", response_model=List[AssessmentForDashboard],status_code=status.HTTP_201_CREATED)
 async def get_assessments(
     skip: int = 0,
     limit: int = 100,
@@ -66,8 +67,25 @@ async def get_assessments(
     db: Session = Depends(get_db)
 ):
     """Get all assessments (accessible by all authenticated users)."""
-    assessments = db.query(Assessment).offset(skip).limit(limit).all()
-    return assessments
+    if current_user.role == 'admin':
+        assessments_from_db = db.query(Assessment).all()
+    else:
+        assessments_from_db = db.query(Assessment).filter(Assessment.status == "published").all()
+    
+    response_data = []
+    for assessment in assessments_from_db:
+        question_count = db.query(AssessmentQuestion).filter(AssessmentQuestion.assessment_id == assessment.id).count()
+        
+        response_data.append({
+            "id": assessment.id,
+            "name": assessment.name,
+            "duration": assessment.duration,
+            "description": assessment.description,
+            "status": assessment.status,
+            "total_questions": question_count
+        })
+
+    return response_data
 
 @router.get("/{assessment_id}", response_model=AssessmentWithQuestions)
 async def get_assessment(

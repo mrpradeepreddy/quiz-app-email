@@ -5,6 +5,7 @@ from datetime import datetime
 class AssessmentBase(BaseModel):
     name: str
     duration: int  # in minutes
+    description:Optional[str]=None
 
 class AssessmentCreate(AssessmentBase):
     question_ids: List[int]  # List of question IDs to include
@@ -26,3 +27,9 @@ class Assessment(AssessmentBase):
 class AssessmentWithQuestions(Assessment):
     total_questions: int
     total_marks: int 
+
+# NEW: Create a schema for the dashboard list view
+class AssessmentForDashboard(AssessmentBase):
+    id: int
+    status: str
+    total_questions: int # Add the calculated field

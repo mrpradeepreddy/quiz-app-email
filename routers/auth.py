@@ -163,22 +163,3 @@ async def change_password(
     db.commit()
     
     return {"message": "Password changed successfully"}
-
-@router.get("/debug-role")
-async def debug_role(current_user: User = Depends(get_current_user)):
-    """Debug endpoint to check current user's role."""
-    return {
-        "username": current_user.username,
-        "role": current_user.role,
-        "role_type": type(current_user.role).__name__,
-        "is_admin": current_user.role == "Admin"
-    }
-
-@router.get("/users", response_model=list[UserSchema])
-async def get_all_users(
-    current_user: User = Depends(require_admin),
-    db: Session = Depends(get_db)
-):
-    """Get all users (admin only)."""
-    users = db.query(User).all()
-    return users 
