@@ -5,3 +5,4 @@ from typing import List
 
 class InviteCreate(BaseModel):
     emails: List[EmailStr]
+    assessment_id:int

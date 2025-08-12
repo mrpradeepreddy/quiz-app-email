@@ -1,6 +1,7 @@
 import streamlit as st
 import requests
 import time
+from student_page import handle_assessment_invite
 
 API_BASE_URL = "http://localhost:8000/api/v1"
 
@@ -51,11 +52,25 @@ def show_login_page():
                 else:
                     auth_data = authenticate_user(email, username, password)
                     if auth_data:
+                        new_token = auth_data["access_token"]
                         st.session_state.token = auth_data["access_token"]
+                        st.session_state.token = new_token
                         st.session_state.user = auth_data["user"]
                         st.session_state.page = 'dashboard'
                         st.success("Login successful!")
-                        st.rerun()
+
+                        # After login, check if there's a pending invite
+                        if 'invite_assessment_id' in st.session_state and st.session_state.invite_assessment_id:
+                            assessment_id_to_take = st.session_state.invite_assessment_id
+                            # Clear the pending invite so it's not used again
+                            del st.session_state.invite_assessment_id
+                            
+                            # Call the handler to go directly to the assessment
+                            handle_assessment_invite(assessment_id_to_take,new_token)
+                        else:
+                            # No pending invite, go to the regular dashboard
+                            st.session_state.page = 'dashboard'
+                            st.rerun()
 
         st.markdown("---")
         st.markdown("Don't have an account?")

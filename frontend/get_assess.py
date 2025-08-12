@@ -64,27 +64,6 @@ def submit_assessment_answers(assessment_id, answers):
         return None
 
 
-def get_assessment_result(assessment_id):
-    """Get assessment results."""
-    if not st.session_state.token:
-        return None
-    try:
-        headers = {"Authorization": f"Bearer {st.session_state.token}"}
-        response = requests.get(f"{API_BASE_URL}/user-assessments/{assessment_id}/result", headers=headers)
-        if response.status_code == 200:
-            return response.json()
-        return None
-    except requests.exceptions.RequestException:
-        return None
-
-
-def submit_and_show_results():
-    """Helper to handle submission logic and switch to results view."""
-    assessment_id = st.session_state.current_assessment['id']
-    submit_assessment_answers(assessment_id, st.session_state.user_answers)
-    st.session_state.show_results = True # Flag to indicate we should show results now
-    st.session_state.page = 'results'
-
 
 
 def show_assessment():

@@ -69,8 +69,7 @@ def generate_and_save_questions(
             )
             
             db.add(db_question)
-            db.commit()
-            db.refresh(db_question)
+            db.flush()
             
             # Create choices
             for choice_data in gen_question.choices:

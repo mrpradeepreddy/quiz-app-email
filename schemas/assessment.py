@@ -20,9 +20,6 @@ class Assessment(AssessmentBase):
     created_by_user_id: int
     created_at: datetime
     updated_at: Optional[datetime] = None
-    
-    class Config:
-        from_attributes = True
 
 class AssessmentWithQuestions(Assessment):
     total_questions: int
@@ -33,3 +30,6 @@ class AssessmentForDashboard(AssessmentBase):
     id: int
     status: str
     total_questions: int # Add the calculated field
+
+    class Config:
+        from_attributes = True

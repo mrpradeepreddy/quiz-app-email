@@ -6,7 +6,7 @@ import uvicorn
 from typing import Optional
 
 from database.connection import engine, Base
-from routers import auth, assessment, question, user_assessment, ai
+from routers import auth, assessment, question, user_assessment, ai,invite
 from config.settings import settings
 
 # Create database tables
@@ -50,6 +50,9 @@ app.include_router(assessment.router, prefix="/api/v1")
 app.include_router(question.router, prefix="/api/v1")
 app.include_router(user_assessment.router, prefix="/api/v1")
 app.include_router(ai.router, prefix="/api/v1")
+app.include_router(invite.router, prefix="/api/v1")
+
+
 
 @app.get("/")
 async def root():

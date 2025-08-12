@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status,BackgroundTasks
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from typing import List, Optional
 from datetime import datetime
 from utils.email import send_invite_email
@@ -59,23 +60,33 @@ def create_assessment(
     db.commit()
     return db_assessment
 
-@router.get("/", response_model=List[AssessmentForDashboard],status_code=status.HTTP_201_CREATED)
-async def get_assessments(
-    skip: int = 0,
-    limit: int = 100,
+@router.get("/", response_model=List[AssessmentForDashboard])
+def get_assessments(  # Removed async, as SQLAlchemy's default API is synchronous
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Get all assessments (accessible by all authenticated users)."""
-    if current_user.role == 'admin':
-        assessments_from_db = db.query(Assessment).all()
-    else:
-        assessments_from_db = db.query(Assessment).filter(Assessment.status == "published").all()
     
+    # 1. Build the base query to get assessments and question counts together
+    query = db.query(
+        Assessment,
+        func.count(AssessmentQuestion.question_id).label("total_questions")
+    ).outerjoin(
+        AssessmentQuestion, Assessment.id == AssessmentQuestion.assessment_id
+    ).group_by(
+        Assessment.id
+    )
+
+    # 2. Apply your role-based filtering to this more efficient query
+    if current_user.role != 'admin':
+        query = query.filter(Assessment.status == "published")
+
+    # 3. Execute the single, powerful query
+    results = query.all()
+
+    # 4. Format the response. This loop makes NO new database calls.
     response_data = []
-    for assessment in assessments_from_db:
-        question_count = db.query(AssessmentQuestion).filter(AssessmentQuestion.assessment_id == assessment.id).count()
-        
+    for assessment, question_count in results:
         response_data.append({
             "id": assessment.id,
             "name": assessment.name,

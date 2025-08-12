@@ -3,69 +3,79 @@ import requests
 import time
 from assessment_page import show_create_assessment_page
 from get_assess import get_assessments,get_assessment_questions
-
+from ai_generator import show_ai_generator_page
+from invite import show_invite_page
+from student_dashboard import show_student_dashboard 
+# from stats_page import show_stats_page
 
 API_BASE_URL = "http://localhost:8000/api/v1"
 
+# -------------------------------------------------------------------
+#  THE MAIN DASHBOARD ROUTER
+# -------------------------------------------------------------------
+
 def show_dashboard():
-    """Displays the main dashboard with available assessments."""
-    # A check to ensure user object is not None before accessing its keys
-    is_admin=False
-    if st.session_state.user and st.session_state.user.get('role')=='admin':
-        is_admin=True
-        st.sidebar.markdown(f"### Welcome, {st.session_state.user.get('name','Admin')}!")
-    elif st.session_state.user:
-        st.sidebar.markdown(f"### Welcome!, {st.session_state.user.get('name','User')}!")
+    """
+    Acts as a router to show the correct dashboard based on user role.
+    This is the only function that should be imported into your main app.py.
+    """
+    if 'user' not in st.session_state or not st.session_state.user:
+        st.error("You must be logged in to view the dashboard.")
+        st.session_state.page = 'login'
+        st.rerun()
+        return
+
+    # Check the user's role and call the appropriate dashboard function
+    if st.session_state.user.get('role') == 'admin':
+        show_admin_dashboard()
+    else:
+        show_student_dashboard()
+
+# -------------------------------------------------------------------
+#  THE ADMIN DASHBOARD
+# -------------------------------------------------------------------
+
+def show_admin_dashboard():
+    """
+    Displays the dashboard with all controls for an admin user.
+    """
+    st.sidebar.title("Admin Dashboard")
+    st.sidebar.markdown(f"### Welcome, {st.session_state.user.get('name', 'Admin')}!")
     
-    admin_choice = "View Assessments"
-    if is_admin:
-        st.sidebar.subheader("Admin Actions")
-        admin_choice = st.sidebar.radio(
-            "Mode",
-            ("View Assessments", "Create New Assessment","Generate-Questions-AI","Invite Students","Stats"),
-            label_visibility="collapsed" # Hides the "Mode" label for a cleaner look
-        )
+    admin_choice = st.sidebar.radio(
+        "Admin Actions",
+        ("View Assessments", "Create New Assessment", "Generate-Questions-AI", "Invite Students", "Stats"),
+        label_visibility="collapsed"
+    )
     
-    # This code block determines what to display based on the radio button selection
-    if admin_choice == "Create New Assessment":
-    # Call the function to display the creation form
+    # Page routing based on the admin's choice
+    if admin_choice == "View Assessments":
+        display_all_assessments_for_admin()
+    elif admin_choice == "Create New Assessment":
         show_create_assessment_page()
-
     elif admin_choice == "Generate-Questions-AI":
-    # You would call a function for your AI page here
-        st.info("AI Question Generator page coming soon!")
-
+        show_ai_generator_page()
     elif admin_choice == "Invite Students":
-    # You would call a function for your Invite page here
-        st.info("Invite Students page coming soon!")
-
+        show_invite_page()
     elif admin_choice == "Stats":
-        st.info("Stats page coming soon!")
+        show_stats_page()
 
-    else: # This handles the "View Assessments" case
-    # Show the default dashboard view
-        st.markdown("<h1 class='main-header'>📚 Quiz Dashboard</h1>", unsafe_allow_html=True)
-        assessments = get_assessments()
+def display_all_assessments_for_admin():
+    """The default view for the admin, showing a list of all assessments."""
+    st.markdown("<h1 class='main-header'>📚 All Assessments</h1>", unsafe_allow_html=True)
+    
+    assessments = get_assessments()
 
-        if not assessments:
-            st.info("No assessments available at the moment.")
-        else:
-            st.markdown("### Available Assessments")
-            cols = st.columns(2)
-            for idx, assessment in enumerate(assessments):
-                with cols[idx % 2]:
-                    with st.container(border=True):
-                # ... inside with st.container(border=True):
-                        st.markdown(f"#### {assessment.get('name', 'Untitled Assessment')}")
-                        st.markdown(f"_{assessment.get('description', 'No description available.')}_")
-                        st.markdown(f"**Duration:** {assessment.get('time_limit', 0)} minutes")
-                        st.markdown(f"**Questions:** {assessment.get('total_questions', 0)}")
-                        if st.button(f"Start Assessment", key=f"start_{assessment['id']}", use_container_width=True):
-                            st.session_state.current_assessment = assessment
-                            st.session_state.questions = get_assessment_questions(assessment['id'])
-                            st.session_state.current_question_index = 0
-                            st.session_state.user_answers = {}
-                            st.session_state.start_time = time.time()
-                            st.session_state.show_results = False
-                            st.session_state.page = 'assessment'
-                            st.rerun()
+    if not assessments:
+        st.info("No assessments found. Create one from the sidebar.")
+        return
+
+    cols = st.columns(2)
+    for idx, assessment in enumerate(assessments):
+        with cols[idx % 2]:
+            with st.container(border=True):
+                st.markdown(f"#### {assessment.get('name', 'Untitled Assessment')}")
+                st.markdown(f"**Status:** {assessment.get('status', 'N/A').capitalize()}")
+                st.markdown(f"**Questions:** {assessment.get('total_questions', 0)}")
+                if st.button("Manage", key=f"manage_{assessment['id']}"):
+                    st.info(f"Management page for assessment {assessment['id']} coming soon.")
