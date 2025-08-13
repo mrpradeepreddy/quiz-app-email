@@ -5,7 +5,7 @@ from register import show_register_page
 from login_page import show_login_page
 from dashboard import show_dashboard
 from assessment_page import show_create_assessment_page
-from get_assess import show_assessment,show_results_page,get_assessment_questions
+from get_assess import show_assessment, show_results_page
 from student_page import handle_assessment_invite
 
 # --- Page Configuration ---
@@ -17,7 +17,6 @@ st.set_page_config(
 )
 
 # --- API Configuration ---
-# CORRECTED: The base URL now includes the /api/v1 prefix from your FastAPI router setup.
 API_BASE_URL = "http://localhost:8000/api/v1"
 
 # --- Initialize Session State ---
@@ -73,47 +72,42 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- Main App Logic (Merged and Corrected) ---
+# --- Main App Logic ---
 def main():
     """Main function to control page navigation."""
     
-    # --- Priority 1: Check for an invitation link in the URL ---
+    # --- Priority 1: Handle invitation link if it exists ---
     query_params = st.query_params
     if "page" in query_params and query_params.page == "take_assessment" and "id" in query_params:
-        # Save the intended destination to the session state
         st.session_state.invite_assessment_id = query_params.id
-        
-        # Clear the URL so it doesn't get stuck in a loop
         st.query_params.clear()
-        st.rerun() # Rerun to proceed to the login page with the invite saved
-    # --- Priority 2: Standard page navigation using session state ---
-    # This part runs if there's no special invitation link.
-     # This check now happens AFTER we've saved any potential invite link info.
+        st.rerun()
+
+    # --- Priority 2: The Main Authentication Gate ---
     if not st.session_state.user:
-        show_login_page()
-        return # Stop execution to prevent showing other pages
+        # --- Unauthenticated User Routing (Login and Register) ---
+        page = st.session_state.get('page', 'login')
+        
+        if page == 'register':
+            show_register_page()
+        else: # Default to login for any other page state
+            show_login_page()
+        
+        return # Stop here for unauthenticated users
 
-    # page = st.session_state.get('page', 'login')
-    # # page = st.session_state.get('page', 'dashboard')
+    # --- Priority 3: Authenticated User Routing (Dashboard, etc.) ---
+    # This code only runs if the user IS logged in.
+    page = st.session_state.get('page', 'dashboard') 
 
-    # This code only runs if the user IS logged in
-    page = st.session_state.get('page', 'dashboard')
     if page == 'dashboard':
-       show_dashboard()
-    elif page == 'login':
-        show_login_page()
-    elif page == 'register':
-        show_register_page()
-    # elif page == 'dashboard':
-    #     show_dashboard()
+        show_dashboard()
     elif page == 'assessment':
         show_assessment()
     elif page == 'results':
         show_results_page()
     else:
-        st.session_state.page = 'login'
-        # st.session_state.page = 'dashboard'
-
+        # If the page state is invalid for a logged-in user, reset to the dashboard.
+        st.session_state.page = 'dashboard'
         st.rerun()
 
 

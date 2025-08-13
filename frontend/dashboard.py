@@ -57,25 +57,46 @@ def show_admin_dashboard():
         show_ai_generator_page()
     elif admin_choice == "Invite Students":
         show_invite_page()
-    elif admin_choice == "Stats":
-        show_stats_page()
+    # elif admin_choice == "Stats":
+    #     show_stats_page()
 
 def display_all_assessments_for_admin():
     """The default view for the admin, showing a list of all assessments."""
     st.markdown("<h1 class='main-header'>📚 All Assessments</h1>", unsafe_allow_html=True)
     
+    # This function call should be in your api_helpers.py or similar
     assessments = get_assessments()
 
     if not assessments:
         st.info("No assessments found. Create one from the sidebar.")
         return
 
-    cols = st.columns(2)
+    # Use 3 columns for a more compact and modern look
+    cols = st.columns(3) 
     for idx, assessment in enumerate(assessments):
-        with cols[idx % 2]:
+        with cols[idx % 3]:
+            # Use a container with a border for each card
             with st.container(border=True):
-                st.markdown(f"#### {assessment.get('name', 'Untitled Assessment')}")
-                st.markdown(f"**Status:** {assessment.get('status', 'N/A').capitalize()}")
-                st.markdown(f"**Questions:** {assessment.get('total_questions', 0)}")
-                if st.button("Manage", key=f"manage_{assessment['id']}"):
+                
+                # --- Card Header ---
+                st.subheader(assessment.get('name', 'Untitled Assessment'))
+                
+                # Use a colored badge for the status
+                status = assessment.get('status', 'N/A').capitalize()
+                if status == 'Draft':
+                    st.markdown(f"Status: <span style='color:gray; font-weight:bold;'>{status}</span>", unsafe_allow_html=True)
+                else: # Assuming 'Published' or other active statuses
+                    st.markdown(f"Status: <span style='color:green; font-weight:bold;'>{status}</span>", unsafe_allow_html=True)
+
+                st.markdown("---") # Visual separator
+
+                # --- Card Body with Metrics ---
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.metric(label="❓ Questions", value=assessment.get('total_questions', 0))
+                with col2:
+                    st.metric(label="⏱️ Duration", value=f"{assessment.get('duration', 0)} min")
+
+                # --- Card Footer with Button ---
+                if st.button("⚙️ Manage", key=f"manage_{assessment['id']}", use_container_width=True):
                     st.info(f"Management page for assessment {assessment['id']} coming soon.")
