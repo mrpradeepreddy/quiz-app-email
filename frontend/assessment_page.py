@@ -68,7 +68,7 @@ def show_create_assessment_page():
     question_options = {f"ID: {q['id']} - {q['question_text']}": q['id'] for q in all_questions}
 
     with st.form("create_assessment_form"):
-        st.markdown("### Assessment Details")
+        st.markdown("### New Assessment")
         title = st.text_input("Title", placeholder="e.g., Basic Python Quiz")
         duration = st.number_input("Time Limit (minutes)", min_value=5, max_value=180, value=30, step=1)
         
@@ -78,10 +78,24 @@ def show_create_assessment_page():
             options=question_options.keys()
         )
 
+        # for label, question_id in question_options.items():
+        # st.checkbox(label, key=f"q_{question_id}") # The key must be unique!
+
+        for question in all_questions:
+            label = f"**ID: {question['id']}** - {question['question_text']}"
+            st.checkbox(label, key=f"q_{question['id']}") # e.g., key='q_101', 'q_102'
         submitted = st.form_submit_button("Create Assessment")
+        # if submitted:
+        #     # 4. Get the list of integer IDs from the user's selection
+        #     selected_question_ids = [question_options[label] for label in selected_question_labels]
+        
+        
         if submitted:
-            # 4. Get the list of integer IDs from the user's selection
-            selected_question_ids = [question_options[label] for label in selected_question_labels]
+            # 3. On submission, collect the IDs of all checked boxes.
+            #    Streamlit stores the state of each widget in st.session_state using its key.
+            selected_question_ids = [
+                question['id'] for question in all_questions if st.session_state[f"q_{question['id']}"]
+            ]
 
             if not all([title, duration]) or not selected_question_ids:
                 st.warning("Please fill out all fields and select at least one question.")
@@ -95,3 +109,10 @@ def show_create_assessment_page():
                 else:
                     error_detail = response.json().get('detail', 'Failed to create assessment.')
                     st.error(f"Error: {error_detail}")
+
+
+
+# this is my new assessment page
+
+# --- Mock API Functions (for demonstration purposes) ---
+# In your real application, these would make actual HTTP requests to your backend.

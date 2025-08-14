@@ -6,6 +6,7 @@ from get_assess import get_assessments,get_assessment_questions
 from ai_generator import show_ai_generator_page
 from invite import show_invite_page
 from student_dashboard import show_student_dashboard 
+from streamlit_option_menu import option_menu
 # from stats_page import show_stats_page
 
 API_BASE_URL = "http://localhost:8000/api/v1"
@@ -42,12 +43,21 @@ def show_admin_dashboard():
     st.sidebar.title("Admin Dashboard")
     st.sidebar.markdown(f"### Welcome, {st.session_state.user.get('name', 'Admin')}!")
     
-    admin_choice = st.sidebar.radio(
-        "Admin Actions",
-        ("View Assessments", "Create New Assessment", "Generate-Questions-AI", "Invite Students", "Stats"),
-        label_visibility="collapsed"
-    )
-    
+    with st.sidebar:
+        admin_choice = option_menu(
+            menu_title="",
+            options=["View Assessments", "Create New Assessment", "Generate-Questions-AI", "Invite Students", "Stats"],
+            # Icons from: https://icons.getbootstrap.com/
+            icons=["card-checklist", "plus-square-fill", "robot", "person-plus-fill", "bar-chart-line-fill"],
+            menu_icon="cast",
+            default_index=0, # The default selected item
+            styles={
+                "container": {"padding": "5px !important", "background-color": "#fafafa"},
+                "icon": {"color": "blue", "font-size": "25px"}, 
+                "nav-link": {"font-size": "16px", "text-align": "left", "margin":"0px", "--hover-color": "#eee"},
+                "nav-link-selected": {"background-color": "#4F8BF9"},
+            }
+        )
     # Page routing based on the admin's choice
     if admin_choice == "View Assessments":
         display_all_assessments_for_admin()
@@ -70,6 +80,11 @@ def display_all_assessments_for_admin():
     if not assessments:
         st.info("No assessments found. Create one from the sidebar.")
         return
+    
+    def go_to_view_page(assessment_id):
+        """Sets the necessary session state to navigate to the view page."""
+        st.session_state.current_assessment_id = assessment_id
+        st.session_state.page = 'view_assessment'
 
     # Use 3 columns for a more compact and modern look
     cols = st.columns(3) 
@@ -98,5 +113,11 @@ def display_all_assessments_for_admin():
                     st.metric(label="⏱️ Duration", value=f"{assessment.get('duration', 0)} min")
 
                 # --- Card Footer with Button ---
-                if st.button("⚙️ Manage", key=f"manage_{assessment['id']}", use_container_width=True):
-                    st.info(f"Management page for assessment {assessment['id']} coming soon.")
+                st.button(
+                    "⚙️ Manage", 
+                    key=f"manage_{assessment['id']}", 
+                    on_click=go_to_view_page, 
+                    args=(assessment['id'],), # Pass the assessment ID to the function
+                    use_container_width=True
+                )
+

@@ -33,7 +33,7 @@ def show_student_dashboard():
     # --- Sidebar Navigation ---
     student_choice = st.sidebar.radio(
         "Navigation",
-        ["Assessments", "My Progress", "Statistics"],
+        ["Assessments", "My Progress", "Statistics",""],
         label_visibility="collapsed"
     )
 
